@@ -1,0 +1,21 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h2>{{ title }}</h2>
+
+    {% for listing in listings %}
+        <li class="listings" style="display:flex;flex-direction:row;border-style:solid;padding:10px;margin:10px;">
+            <a href="/listing/{{listing.id}}" style="width: 30%;"><img src={{listing.imageURL}} alt={{listing.imageURL}} style="width: 100%;"></a>
+            <div style="margin: 10px 0px 0px 10px;">
+                <p><strong>{{listing.id}}</strong></p>
+                <p><strong>{{listing.title}}</strong></p>
+                <p style="margin-top:-15px;">{{listing.description}}</p>
+                {% if listing.price > 0 %}
+                    <p>Price: ${{listing.price}}</p>
+                {% else %}
+                    <p>Price: ${{listing.startingbid}}</p>
+                {% endif %}
+            </div>
+        </li>
+    {% endfor %}
+{% endblock %}

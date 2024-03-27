@@ -1,0 +1,55 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h2><strong>Listing: {{listing.title}}</strong></h2>
+    {% if watchlist == 0 %}
+        <a href="/addwatchlist/{{listing.id}}"><button>Add to Watchlist</button></a>
+    {% else %}
+        <a href="/removewatchlist/{{listing.id}}"><button>Remove from Watchlist</button></a>
+    {% endif %}
+    <br>
+    <img src={{listing.imageURL}} alt={{listing.imageURL}} style="width:35%;margin: 15px 0px;">
+    <h4>Description:</h4>
+    <p>{{listing.description}}</p>
+    </div>
+    <h4 style="margin-top:25px;">Current price: ${{listing.price}}</h4>
+    <p><i>Number of bids: {{bids}}</i></p>
+    {% if listing.active == 1 %}
+        {% if bidder == winner %}
+            <p><strong>You have the current highest bid</p>
+        {% endif %}
+        {% if bidder != listing.user_id %}
+            <h5>Bid on this item:</h5>
+            <form action="/newbid/{{listing.id}}" method="post">
+                {% csrf_token %}
+                {{ bidform }}
+                <button type="submit" class="btn btn-primary btn-new-blue" style="margin-top:5px;">Place bid</button>
+            </form>
+        {% else %}
+            <a href="/closeauction/{{listing.id}}"><button>Close auction</button></a>
+        {% endif %}
+    {% else %}
+        <p>This bidding has closed</p>
+        {% if bidder == winner %}
+            <h5>You have won the bid!</h5>
+        {% endif %}
+    {% endif %}
+    <h3 style="margin-top:35px;">Details:</h3>
+    <li>Listed by: {{ listing.user_id }}</li>
+    <li>Listed on: {{listing.datetime}}</li>
+    <li>Category: {{listing.category}}</li>
+
+    <h3 style="margin-top:35px;">Comments:</h3>
+    <form action="/comment/{{listing.id}}" method="post">
+        {% csrf_token %}
+        {{ commentform }}
+        <button type="submit" class="btn btn-primary btn-new-blue" style="margin:5px 0px 10px 0px;">Submit comment</button>
+    </form>
+    {% for comment in comments %}
+        <div class="comments" style="border-style:solid;max-width:500px;border-radius:10px;margin-top:8px;padding:5px;">
+            <p>Posted by: {{ comment.user }} on {{ comment.datetime }}:</p>
+            <hr>
+            <p>{{ comment.text }}</p>
+        </div>
+    {% endfor %}
+{% endblock %}

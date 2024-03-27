@@ -1,0 +1,15 @@
+body {
+    padding: 10px;
+}
+
+.listings li {
+    display: flex;
+    flex-direction: row;
+    background-color: yellow;
+}
+
+.comments {
+    border-style:solid;
+    max-width:500px;
+    border-radius:10px;
+}
