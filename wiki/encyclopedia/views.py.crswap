@@ -1,0 +1,127 @@
+from django.shortcuts import render
+from django.shortcuts import redirect
+from django import forms
+
+from . import util
+import markdown2
+import random
+
+
+# Add form to create new entry
+class CreateForm(forms.Form):
+    title = forms.CharField(label='', widget=forms.TextInput(attrs={"placeholder": 'Title'}))
+    body = forms.CharField(label='', widget=forms.Textarea(attrs={"placeholder": 'Write your entry here using Markdown', 'style': 'margin: 10px 0px;'}))
+
+# Add form to edit existing entry
+class EditForm(forms.Form):
+        body = forms.CharField(label='', widget=forms.Textarea(attrs={"placeholder": 'Write your entry here using Markdown', 'style': 'margin: 10px 0px;'}))
+
+
+# Go to index page
+def index(request):
+    # Go to index page with list of wiki entries
+    return render(request, "encyclopedia/index.html", {
+        "entries": util.list_entries()
+    })
+
+
+# Go to a wiki article
+def wiki(request, name):
+    # Get wiki entry
+    text = util.get_entry(name)
+    # Load error page if wiki entry does not exist
+    if text is None:
+        return render(request, "encyclopedia/error.html")
+    # Convert markup text to HTML
+    convertedtext = markdown2.markdown(text)
+    # Load wiki page with title and converted text
+    return render(request, "encyclopedia/wikipage.html", {
+        "title": name,
+        "text": convertedtext
+    })
+
+
+#Allows user to type a query into the search box in the sidebar to search for an encyclopedia entry
+def search(request):
+    # Return wiki page for query if it exists
+    entries = util.list_entries()
+    query = request.GET.get("q", "")
+    if query in entries:
+        return redirect(wiki, query)
+
+    # Return all entries that contain query
+    results = [entry for entry in entries if query.lower() in entry.lower()]
+    return render(request, "encyclopedia/index.html", {
+        "entries": results,
+    })
+
+
+# Takes the user to a page where they can create a new encyclopedia entry
+def newpage(request):
+    # Check if method=POST
+    if request.method == "POST":
+        # Get form data
+        form = CreateForm(request.POST)
+        # Check if form data is valid (server-side)
+        if form.is_valid():
+            # Isolate title and body
+            title = form.cleaned_data["title"]
+            body = form.cleaned_data["body"]
+            # Give error if page already exists
+            if title in util.list_entries():
+                return render(request, "encyclopedia/exist_error.html",{
+                    "entry": title
+                })
+            # Make page and redirect to new page
+            else:
+                util.save_entry(title, body)
+                return redirect(wiki, title)
+        # If the form is invalid, re-render the page with existing information.
+        else:
+            return render(request, "encyclopedia/edit.html", {
+                "title": "Create new page",
+                "link": "/newpage/",
+                "form": form
+            })
+    # Let user create a new wiki entry if method=GET
+    return render(request, "encyclopedia/edit.html", {
+        "title": "Create new page",
+        "link": "/newpage",
+        "form": CreateForm()
+    })
+
+
+# Takes user to a page where the user can edit that entry’s Markdown content
+def editpage(request, name):
+    # Check if method=POST
+    if request.method == "POST":
+        # Get form data
+        form = EditForm(request.POST)
+        # Check if form data is valid (server-side)
+        if form.is_valid():
+            # Isolate body
+            body = form.cleaned_data["body"]
+            # Make page and redirect to new page
+            util.save_entry(name, body)
+            return redirect(wiki, name)
+        # If the form is invalid, re-render the page with existing information.
+        else:
+            return render(request, "encyclopedia/edit.html", {
+                "title": "Edit page: "+name,
+                "link": "editpage/"+name,
+                "form": form
+            })
+    # Let user edit the wiki entry if method=GET, prefill with existing content
+    return render(request, "encyclopedia/edit.html", {
+        "title": "Edit page: "+name,
+        "link": name,
+        "form": EditForm({"body": util.get_entry(name)})
+    })
+
+
+# Takes user to a random encyclopedia entry
+def randompage(request):
+    # Choose a random entry
+    query = random.choice(util.list_entries())
+    # Load page for entry
+    return redirect(wiki, query)
